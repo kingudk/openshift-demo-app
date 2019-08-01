@@ -1,0 +1,211 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "annotations": {
+            "description": "Demo template for a very simple Tomcat application",
+            "iconClass": "icon-amq",
+            "tags": "httpd,webdav",
+            "version": "2.4",
+            "openshift.io/display-name": "Simple web-app demo template",
+            "openshift.io/provider-display-name": "Royal Danish Library"
+        },
+        "name": "web-demo-app"
+    },
+    "labels": {
+        "template": "web-demo-app",
+        "xpaas": "2.4"
+    },
+    "message": "A web-demo-app has been created in your project.",
+    "parameters": [
+        {
+            "displayName": "Application Name",
+            "description": "The name for the application.",
+            "name": "APPLICATION_NAME",
+            "value": "web-demo",
+            "required": true
+        }
+    ],
+    "objects": [
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "spec": {
+                "ports": [
+                    {
+                        "port": 8080,
+                        "targetPort": 8080
+                    }
+                ],
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}"
+                }
+            },
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "annotations": {
+                    "description": "The http port."
+                }
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "web-demo"
+            },
+            "spec": {
+                "dockerImageRepository": "",
+                "tags": [
+                    {
+                        "name": "latest"
+                    }
+                ]
+            }
+        },
+	    {
+	        "kind": "BuildConfig",
+    	    "apiVersion": "v1", 
+	        "metadata": {
+                    "name": "web-demo",
+    		"labels": {
+                    "build": "web-demo"
+    		}
+	        },
+	        "spec": {
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "web-demo:latest"
+                    }
+                }, 
+                "runPolicy": "Serial",
+                "source": {
+                    "git": {
+                        "uri": "https://github.com/sbktc/openshift-demo-app.git",
+                        "ref": "ocp-test"
+                    }, 
+                    "type": "Git"
+                },
+                "strategy": {
+                    "sourceStrategy": {
+                        "from": {
+                            "kind": "ImageStreamTag",
+                            "name": "kb-s2i-tomcat-builder:latest",
+                            "namespace": "kb-infra"
+                        } 
+                    },
+                   "type": "Source" 
+                },
+                "successfulBuildsHistoryLimit": 5,
+                "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    },
+                    {
+                        "imageChange": 
+                            {
+                            },
+                        "type": "ImageChange"
+                    }
+                ]
+            }
+    	},
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                }
+            },
+            "spec": {
+                "strategy": {
+                    "type": "Rolling",
+                    "rollingParams": {
+                        "maxSurge": 0
+                    }
+                },
+                "triggers": [
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "${APPLICATION_NAME}"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "web-demo:latest"
+                            }
+                        }
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "replicas": 1,
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}"
+                },
+                "template": {
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
+                        "labels": {
+                            "deploymentConfig": "${APPLICATION_NAME}",
+                            "application": "${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "terminationGracePeriodSeconds": 60,
+                        "containers": [
+                            {
+                                "name": "${APPLICATION_NAME}",
+                                "image": "$APPLICATION_NAME",
+                                "imagePullPolicy": "Always",
+                                "readinessProbe": {
+                                    "httpGet": {
+                                        "path": "/web-demo/",
+                                        "port": 8080
+                                    },
+                                    "initialDelaySeconds": 15,
+                                    "timeoutSeconds": 1
+                                },
+                                "ports": [
+                                    {
+                                        "name": "tcp",
+                                        "containerPort": 8080,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "env": [
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "kind": "Route",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "annotations": {
+                    "description": "Route for application's http service"
+                }
+            },
+            "spec": {
+                "host": "web-demo.apps-test.kb.dk",
+                "to": {
+                    "kind": "Service",
+                    "name": "${APPLICATION_NAME}"
+                }
+            }
+        }
+    ]
+}
