@@ -1,3 +1,3 @@
-<Context docBase="/app/tomcat-apps/demo-app.war">
+<Context docBase="/app/tomcat-apps/web-demo.war">
 </Context>
 
