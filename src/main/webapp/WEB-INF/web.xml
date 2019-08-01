@@ -6,23 +6,24 @@
 
     <display-name>Webdemo</display-name>
 
-    <!--listener>
-        <listener-class>com.sun.xml.ws.transport.http.servlet.WSServletContextListener</listener-class>
-    </listener>
 
     <listener>
         <listener-class>dk.kb.cxf.echo.listener.InitializationContextListener</listener-class>
-    </listener-->
+    </listener>
 
     <servlet>
-        <servlet-name>Webdemo</servlet-name>
-        <servlet-class>com.sun.xml.ws.transport.http.servlet.WSServlet</servlet-class>
+        <servlet-name>EchoServlet</servlet-name>
+        <servlet-class>org.apache.cxf.jaxrs.servlet.CXFNonSpringJaxrsServlet</servlet-class>
+        <init-param>
+            <param-name>javax.ws.rs.Application</param-name>
+            <param-value>dk.kb.cxf.echo.ApplicationConfig</param-value>
+        </init-param>
         <load-on-startup>1</load-on-startup>
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>Webdemo</servlet-name>
-	<url-pattern>/demo/</url-pattern>
+        <servlet-name>EchoServlet</servlet-name>
+    	<url-pattern>/demo/</url-pattern>
     </servlet-mapping>
 
     <session-config>
